@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+//cria o registro do usuario no banco
 export async function register(req, res) {
     try{
         const { nomeCompleto, email, senha, telefone } = req.body;
@@ -26,7 +27,7 @@ export async function register(req, res) {
     }
 }
 
-
+//faz login 
 export async function login(req, res) {
   try {
     const { email, senha } = req.body;
@@ -42,7 +43,7 @@ export async function login(req, res) {
     }
 
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -53,6 +54,7 @@ export async function login(req, res) {
   }
 }
 
+//Pega todos os login
 export async function getAllUsers(req, res) {
   try {
     const users = await User.find();
