@@ -64,3 +64,35 @@ export async function getAllUsers(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
+//Para atualizar ou cadastrar os dados que falta
+export async function putDadosUser(req, res) {
+  try{
+    const { id } = req.params;
+    const { nomeCompleto, telefone, cpf, email, endereco, cep, numeroCasa } = req.body;
+
+    const camposParaAtualizar = {};
+    if (nomeCompleto) camposParaAtualizar.nomeCompleto = nomeCompleto;
+    if (telefone)     camposParaAtualizar.telefone = telefone;
+    if (cpf)          camposParaAtualizar.cpf = cpf;
+    if (email)        camposParaAtualizar.email = email;
+    if (endereco)     camposParaAtualizar.endereco = endereco;
+    if (cep)          camposParaAtualizar.cep = cep;
+    if (numeroCasa)   camposParaAtualizar.numeroCasa = numeroCasa;
+
+    const userAtualizado = await User.findByIdAndUpdate(
+      id,
+      { $set: camposParaAtualizar },
+      { new: true, runValidators: true } // "new: true" retorna o doc já atualizado
+    );
+
+    if (!userAtualizado) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    res.status(200).json({ message: "Dados atualizados com sucesso", user: userAtualizado });
+
+  } catch (erro){
+    res.status(500).json({ error: erro.message });
+  }
+}

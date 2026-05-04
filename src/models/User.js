@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
     role: { type: String, default: "user" },
     senha: String,
     telefone: String,
+    cpf: Number,
     endereco: String,
     cep: String,
     numeroCasa: String
