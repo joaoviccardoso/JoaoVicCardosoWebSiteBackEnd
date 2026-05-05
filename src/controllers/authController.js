@@ -65,6 +65,20 @@ export async function getAllUsers(req, res) {
   }
 }
 
+//busca parcial de cliente
+export async function searchUser(req, res) {
+    try {
+        const { nome } = req.query;
+        const users = await User.find({ 
+            nomeCompleto: { $regex: nome, $options: "i" } // busca parcial, case insensitive
+        }).select("_id nomeCompleto email");
+
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao buscar usuário" });
+    }
+}
+
 //Para atualizar ou cadastrar os dados que falta
 export async function putDadosUser(req, res) {
   try{

@@ -2,11 +2,7 @@ import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
     nomeProjeto: { type: String, required: true },
-    status: { 
-        type: String, 
-        enum: ["Em andamento", "Concluído", "Pausado", "Cancelado"],
-        default: "Em andamento"
-    },
+    status: {type: String, default: "Em andamento"},
     cliente: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     dateEntrega: { type: Date },
     linkContrato: { type: String },
