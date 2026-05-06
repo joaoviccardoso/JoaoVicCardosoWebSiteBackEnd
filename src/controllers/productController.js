@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Product from "../models/productModel.js";
 
 // Criar produto
@@ -36,9 +37,20 @@ export async function getProductsByCliente(req, res) {
     try {
         const { clienteId } = req.params;
         const products = await Product.find({ cliente: clienteId });
-        res.status(200).json(products);
+
+        console.log(`teste ${products}`)
+        if(products.length > 0){
+            res.status(200).json(products);
+        } else{
+            res.status(404).send({ message: "Produto nao encontrado"});
+        }
+        
     } catch (error) {
-        res.status(500).json({ message: "Erro ao buscar produtos", error: error.message });
+        if(error instanceof mongoose.Error.CastError){
+          res.status(400).send({ message: "Um ou mais dados fornecidos estao incorretos"})
+        }else{
+            res.status(500).send({ message: "Erro interno de servidor", error: error.message });
+        }
     }
 }
 
