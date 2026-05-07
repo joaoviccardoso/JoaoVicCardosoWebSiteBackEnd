@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Product from "../models/productModel.js";
 
 // Criar produto
-export async function createProduct(req, res) {
+export async function createProduct(req, res,next) {
     try {
         const { nomeProjeto, status, cliente, dateEntrega, linkContrato, linkDemo, obser } = req.body;
 
@@ -18,23 +18,25 @@ export async function createProduct(req, res) {
 
         res.status(201).json({ message: "Produto cadastrado!", product });
     } catch (error) {
-        res.status(500).json({ message: "Erro ao cadastrar produto", error: error.message });
+        next(error)
     }
 }
 
 // Buscar todos os produtos (com dados do cliente)
-export async function getAllProducts(req, res) {
+export async function getAllProducts(req, res, next) {
     try {
         const products = await Product.find().populate("cliente", "nomeCompleto email telefone");
         res.status(200).json(products);
     } catch (error) {
-        res.status(500).json({ message: "Erro ao buscar produtos", error: error.message });
+        next(error)
     }
 }
 
 // Buscar produtos de um cliente específico
-export async function getProductsByCliente(req, res) {
+export async function getProductsByCliente(req, res, next) {
     try {
+
+         
         const { clienteId } = req.params;
         const products = await Product.find({ cliente: clienteId });
 
@@ -46,11 +48,7 @@ export async function getProductsByCliente(req, res) {
         }
         
     } catch (error) {
-        if(error instanceof mongoose.Error.CastError){
-          res.status(400).send({ message: "Um ou mais dados fornecidos estao incorretos"})
-        }else{
-            res.status(500).send({ message: "Erro interno de servidor", error: error.message });
-        }
+        next(error)
     }
 }
 
