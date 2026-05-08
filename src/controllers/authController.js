@@ -110,12 +110,15 @@ export async function putDadosUser(req, res) {
   try{
     const { id } = req.params;
 
-    // Bloqueia edição de outro usuário
-    if (req.usuarioId !== id) {
-      return res.status(403).json({ mensagem: "Acesso negado." });
+    // permite se for o próprio usuário OU se for admin
+    const ehOProprioUsuario = req.usuarioId === id
+    const ehAdmin = req.usuarioRole === "admin"
+
+    if (!ehOProprioUsuario && !ehAdmin) {
+      return res.status(403).json({ mensagem: "Acesso negado." })
     }
 
-    const { nomeCompleto, telefone, cpf, email, endereco, cep, numeroCasa } = req.body;
+    const { nomeCompleto, telefone, cpf, email, endereco, cep, numeroCasa, role } = req.body;
 
     const camposParaAtualizar = {};
     if (nomeCompleto) camposParaAtualizar.nomeCompleto = nomeCompleto;
@@ -125,12 +128,13 @@ export async function putDadosUser(req, res) {
     if (endereco)     camposParaAtualizar.endereco = endereco;
     if (cep)          camposParaAtualizar.cep = cep;
     if (numeroCasa)   camposParaAtualizar.numeroCasa = numeroCasa;
+    if (role && ehAdmin) camposParaAtualizar.role = role //só admin pode mudar o role
 
     const userAtualizado = await User.findByIdAndUpdate(
       id,
       { $set: camposParaAtualizar },
       { new: true, runValidators: true } // "new: true" retorna o doc já atualizado
-    ).select("-password");
+    ).select("-senha");
 
     if (!userAtualizado) {
       return res.status(404).json({ error: "Usuário não encontrado" });
