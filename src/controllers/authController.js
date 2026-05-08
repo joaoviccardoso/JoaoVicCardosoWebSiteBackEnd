@@ -59,12 +59,36 @@ export async function login(req, res) {
 //Pega todos os login
 export async function getAllUsers(req, res) {
   try {
-     const users = await User.find().select("-password");
+    const users = await User.find().select("-senha");
 
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+}
+
+// pega usuario por id
+export async function getOneUser(req, res) {
+    try {
+        const { id } = req.params
+
+        // Valida se o id é um ObjectId válido do MongoDB
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ message: "ID inválido" })
+        }
+
+        const user = await User.findById(id).select("-senha") // 👈 nunca retorna a senha
+
+        if (!user) {
+            return res.status(404).json({ message: "Usuário não encontrado" })
+        }
+
+        res.status(200).json(user)
+
+    } catch (error) {
+        console.error("Erro em getOneUser:", error)
+        res.status(500).json({ message: "Erro interno no servidor" })
+    }
 }
 
 //busca parcial de cliente
