@@ -73,3 +73,28 @@ export async function deleteProduct(req, res) {
         res.status(500).json({ message: "Erro ao deletar", error: error.message });
     }
 }
+
+//procurar Produto por ID
+export async function getProdutiPorId(req, res){
+     try {
+            const { id } = req.params
+    
+            // Valida se o id é um ObjectId válido do MongoDB
+            if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+                return res.status(400).json({ message: "ID inválido" })
+            }
+    
+           const produto = await Product.findById(id).populate("cliente", "nomeCompleto email")
+
+    
+            if (!produto) {
+                return res.status(404).json({ message: "Usuário não encontrado" })
+            }
+    
+            res.status(200).json(produto)
+    
+        } catch (error) {
+            console.error("Erro em getOneUser:", error)
+            res.status(500).json({ message: "Erro interno no servidor" })
+        }
+}
