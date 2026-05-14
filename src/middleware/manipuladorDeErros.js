@@ -5,8 +5,7 @@ import ErroValidacao from "../erros/ErroValidacao.js";
 import NaoEncontrado from "../erros/NaoEncontrado.js";
 
 
-function manipuladorDeErros
-(error, req, res, next){
+function manipuladorDeErros(error, req, res, next){
     if(error instanceof mongoose.Error.CastError){
         return new RequisicaoIncorreta().enviarResposta(res)
     }else if(error instanceof mongoose.Error.ValidationError){
