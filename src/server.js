@@ -6,7 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import manipuladorDeErros from "./middleware/manipuladorDeErros.js";
 import manipulador404 from "./middleware/manipulador404.js";
-
+const PORT = process.env.PORT || 3000;
 dotenv.config();
 
 const app = express();
@@ -20,8 +20,8 @@ app.use("/produtos", productRoutes);
 app.use(manipulador404)
 app.use(manipuladorDeErros);
 
-connectDB();
-
-app.listen(3000, () => {
-  console.log("Servidor rodando");
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
 });
