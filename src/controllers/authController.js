@@ -71,13 +71,13 @@ export async function getAllUsers(req, res) {
 export async function getOneUser(req, res) {
     try {
         const { id } = req.params
-
+        console.log("Tentando deletar ID:", id); // ← adicione isso
         // Valida se o id é um ObjectId válido do MongoDB
         if (!id.match(/^[0-9a-fA-F]{24}$/)) {
             return res.status(400).json({ message: "ID inválido" })
         }
 
-        const user = await User.findById(id).select("-senha") // 👈 nunca retorna a senha
+        const user = await User.findById(id).select("-senha") // nunca retorna a senha
 
         if (!user) {
             return res.status(404).json({ message: "Usuário não encontrado" })
@@ -145,4 +145,31 @@ export async function putDadosUser(req, res) {
   } catch (erro){
     res.status(500).json({ error: erro.message });
   }
+}
+
+// Deletar cliente
+export async function deleteCliente(req, res) {
+    try {
+        const { id } = req.params;
+
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ message: "ID inválido" });
+        }
+
+        // ou: impedir que o admin delete a si mesmo
+        if (id === req.usuarioId) {
+            return res.status(403).json({ message: "Você não pode deletar sua própria conta." });
+        }
+
+        const deletado = await User.findByIdAndDelete(id);
+
+        if (!deletado) {
+            return res.status(404).json({ message: "Usuário não encontrado" });
+        }
+
+        res.status(200).json({ message: "Usuario deletado!" });
+    } catch (error) {
+        console.error("Erro real ao deletar:", error); // ← veja o terminal
+        res.status(500).json({ message: "Erro ao deletar", error: error.message });
+    }
 }

@@ -1,7 +1,7 @@
 import express from "express";
 import autenticar from "../middleware/authMiddleware.js";
 import rateLimit from "express-rate-limit"; //
-import {register, login, getAllUsers, putDadosUser, searchUser, getOneUser} from "../controllers/authController.js";
+import {register, login, getAllUsers, putDadosUser, searchUser, getOneUser, deleteCliente} from "../controllers/authController.js";
 import autorizar from "../middleware/autorizarMiddleware.js";
 
 const router = express.Router();
@@ -31,9 +31,10 @@ const registerLimiter = rateLimit({
 router.post("/register", registerLimiter ,register);
 router.post("/login", loginLimiter ,login);
 
-router.get("/users", autenticar, autorizar("admin"),getAllUsers);
-router.get("/buscar", autenticar, searchUser);
 router.put("/atualizarDados/:id",autenticar, putDadosUser)
-router.get("/user/:id", autenticar, getOneUser)
+router.get("/users", autenticar, autorizar("admin"), getAllUsers);
+router.get("/buscar", autenticar, autorizar("admin"), searchUser);
+router.get("/user/:id", autenticar,autorizar("admin"), getOneUser)
+router.delete("/delete/:id",autenticar, autorizar("admin"), deleteCliente)
 
 export default router;
