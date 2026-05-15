@@ -12,7 +12,10 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: "https://lightslategray-deer-405894.hostingersite.com",
+  origin: [
+    "https://jvcode.tech",
+    "https://www.jvcode.tech"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
