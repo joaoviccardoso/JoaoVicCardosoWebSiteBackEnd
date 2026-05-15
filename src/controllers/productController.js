@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Product from "../models/productModel.js";
 
 // Criar produto
-export async function createProduct(req, res,next) {
+export async function createProduct(req, res, next) {
     try {
         const { nomeProjeto, status, cliente, dateEntrega, linkContrato, linkDemo, obser } = req.body;
 
@@ -53,29 +53,29 @@ export async function getProductsByCliente(req, res, next) {
 }
 
 // Atualizar produto
-export async function updateProduct(req, res) {
+export async function updateProduct(req, res, next) {
     try {
         const { id } = req.params;
         const updated = await Product.findByIdAndUpdate(id, req.body, { new: true });
         res.status(200).json({ message: "Produto atualizado!", updated });
     } catch (error) {
-        res.status(500).json({ message: "Erro ao atualizar", error: error.message });
+        next(error)
     }
 }
 
 // Deletar produto
-export async function deleteProduct(req, res) {
+export async function deleteProduct(req, res, next) {
     try {
         const { id } = req.params;
         await Product.findByIdAndDelete(id);
         res.status(200).json({ message: "Produto deletado!" });
     } catch (error) {
-        res.status(500).json({ message: "Erro ao deletar", error: error.message });
+        next(error)
     }
 }
 
 //procurar Produto por ID
-export async function getProdutiPorId(req, res){
+export async function getProdutiPorId(req, res, next){
      try {
             const { id } = req.params
     
@@ -94,7 +94,6 @@ export async function getProdutiPorId(req, res){
             res.status(200).json(produto)
     
         } catch (error) {
-            console.error("Erro em getOneUser:", error)
-            res.status(500).json({ message: "Erro interno no servidor" })
+            next(error)
         }
 }

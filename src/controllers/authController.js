@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 //cria o registro do usuario no banco
-export async function register(req, res) {
+export async function register(req, res, next) {
     try{
         const { nomeCompleto, email, senha, telefone } = req.body;
 
@@ -23,12 +23,12 @@ export async function register(req, res) {
 
         res.status(201).json(newUser);
     } catch (error){
-        res.status(500).json({ error: error.message });
+        next(error)
     }
 }
 
 //faz login 
-export async function login(req, res) {
+export async function login(req, res, next) {
   try {
     const { email, senha } = req.body;
 
@@ -52,23 +52,23 @@ export async function login(req, res) {
     const { senha: _senha, ...dadosPublicos } = user.toObject();
     res.json({ user: dadosPublicos, token });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(error)
   }
 }
 
 //Pega todos os login
-export async function getAllUsers(req, res) {
+export async function getAllUsers(req, res, next) {
   try {
     const users = await User.find().select("-senha");
 
     res.json(users);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(error)
   }
 }
 
 // pega usuario por id
-export async function getOneUser(req, res) {
+export async function getOneUser(req, res, next) {
     try {
         const { id } = req.params
         console.log("Tentando deletar ID:", id); // ← adicione isso
@@ -86,13 +86,12 @@ export async function getOneUser(req, res) {
         res.status(200).json(user)
 
     } catch (error) {
-        console.error("Erro em getOneUser:", error)
-        res.status(500).json({ message: "Erro interno no servidor" })
+        next(error)
     }
 }
 
 //busca parcial de cliente
-export async function searchUser(req, res) {
+export async function searchUser(req, res, next) {
     try {
         const { nome } = req.query;
         const users = await User.find({ 
@@ -101,12 +100,12 @@ export async function searchUser(req, res) {
 
         res.status(200).json(users);
     } catch (error) {
-        res.status(500).json({ message: "Erro ao buscar usuário" });
+        next(error)
     }
 }
 
 //Para atualizar ou cadastrar os dados que falta
-export async function putDadosUser(req, res) {
+export async function putDadosUser(req, res, next) {
   try{
     const { id } = req.params;
 
@@ -143,12 +142,12 @@ export async function putDadosUser(req, res) {
     res.status(200).json({ message: "Dados atualizados com sucesso", user: userAtualizado });
 
   } catch (erro){
-    res.status(500).json({ error: erro.message });
+    next(error)
   }
 }
 
 // Deletar cliente
-export async function deleteCliente(req, res) {
+export async function deleteCliente(req, res, next) {
     try {
         const { id } = req.params;
 
@@ -169,7 +168,6 @@ export async function deleteCliente(req, res) {
 
         res.status(200).json({ message: "Usuario deletado!" });
     } catch (error) {
-        console.error("Erro real ao deletar:", error); // ← veja o terminal
-        res.status(500).json({ message: "Erro ao deletar", error: error.message });
+        next(error)
     }
 }
