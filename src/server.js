@@ -12,7 +12,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: "https://teal-goose-884697.hostingersite.com",
+  origin: "https://lightslategray-deer-405894.hostingersite.com",
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
