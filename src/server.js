@@ -37,6 +37,8 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+app.set("trust proxy", 1);
+
 app.use("/auth", authRoutes);
 app.use("/produtos", productRoutes);
 
