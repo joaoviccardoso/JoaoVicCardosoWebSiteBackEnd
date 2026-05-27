@@ -1,5 +1,6 @@
 import productMpModel from "../models/productMpModel.js";
 
+//cria o produto no banco
 export async function createProductMp(req, res, next) {
     try {
         console.log("body:", req.body); // ← deixa por enquanto pra confirmar
@@ -31,5 +32,15 @@ export async function createProductMp(req, res, next) {
         console.log("ERRO:", error.message);  // ← adiciona
         console.log("STACK:", error.stack);   // ← e isso
         next(error);
+    }
+}
+
+// Buscar todos os produtos
+export async function getAllProductsMp(req, res, next) {
+    try {
+        const productsMp = await productMpModel.find();
+        res.status(200).json(productsMp);
+    } catch (error) {
+        next(error)
     }
 }

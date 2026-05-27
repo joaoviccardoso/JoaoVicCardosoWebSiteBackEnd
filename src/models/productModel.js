@@ -37,11 +37,10 @@ const productSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Atualiza a cor sempre que o status mudar
-productSchema.pre("save", function (next) {
+productSchema.pre("save", async function() {
   if (this.isModified("status")) {
     this.statusCor = STATUS_COR_MAP[this.status] ?? "gray";
   }
-  next();
 });
 
 export default mongoose.model("Product", productSchema);
