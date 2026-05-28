@@ -40,7 +40,8 @@ app.use(express.json());
 
 app.use("/auth", authRoutes);
 app.use("/produtos", productRoutes);
-app.use("/produtosMP", productMpRoutes)
+app.use("/produtosMP", productMpRoutes);
+app.use("/uploads", express.static("uploads"));
 
 app.use(manipulador404);
 app.use(manipuladorDeErros);

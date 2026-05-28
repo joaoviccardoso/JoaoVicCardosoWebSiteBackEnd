@@ -90,7 +90,7 @@ export async function getProdutiPorId(req, res, next){
 
     
             if (!produto) {
-                return res.status(404).json({ message: "Usuário não encontrado" })
+                return res.status(404).json({ message: "Produto não encontrado" })
             }
     
             res.status(200).json(produto)
