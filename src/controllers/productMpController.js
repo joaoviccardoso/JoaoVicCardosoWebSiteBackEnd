@@ -5,9 +5,6 @@ import productMpModel from "../models/productMpModel.js";
 //cria o produto no banco
 export async function createProductMp(req, res, next) {
     try {
-        console.log("body:", req.body); // ← deixa por enquanto pra confirmar
-        console.log("file:", req.file);
-
         const { nomeCompleto, descricaoCurta, motivoDoProjeto } = req.body;
 
         const tecnologias = req.body.tecnologias
@@ -135,4 +132,15 @@ export async function getProdutoMpPorId(req, res, next){
         } catch (error) {
             next(error)
         }
+}
+
+// Deletar produto
+export async function deleteProductMp(req, res, next) {
+    try {
+        const { id } = req.params;
+        await productMpModel.findByIdAndDelete(id);
+        res.status(200).json({ message: "Produto deletado!" });
+    } catch (error) {
+        next(error)
+    }
 }
