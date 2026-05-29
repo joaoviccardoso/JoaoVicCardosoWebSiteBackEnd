@@ -4,13 +4,14 @@ import Product from "../models/productModel.js";
 // Criar produto
 export async function createProduct(req, res, next) {
     try {
-        const { nomeProjeto, status, cliente, dateEntrega, linkContrato, linkDemo, obser } = req.body;
+        const { nomeProjeto, status, statusCor, cliente, dateEntrega, linkContrato, linkDemo, obser } = req.body;
 
         const product = await Product.create({
             nomeProjeto,
             status,
-            cliente,      // ID do usuário/cliente
-            dateEntrega,
+            statusCor,
+            cliente: cliente || null,
+            dateEntrega: dateEntrega || null,
             linkContrato,
             linkDemo,
             obser
@@ -18,7 +19,8 @@ export async function createProduct(req, res, next) {
 
         res.status(201).json({ message: "Produto cadastrado!", product });
     } catch (error) {
-        next(error)
+        console.error("ERRO AO CRIAR PRODUTO:", error)
+        res.status(500).json({ error: error.message }) // <- troca next(error) por isso
     }
 }
 
@@ -88,7 +90,7 @@ export async function getProdutiPorId(req, res, next){
 
     
             if (!produto) {
-                return res.status(404).json({ message: "Usuário não encontrado" })
+                return res.status(404).json({ message: "Produto não encontrado" })
             }
     
             res.status(200).json(produto)

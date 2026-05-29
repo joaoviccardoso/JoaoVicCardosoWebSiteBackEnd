@@ -45,4 +45,14 @@ const productSchema = new mongoose.Schema({
     obser: { type: String },
 }, { timestamps: true });
 
+<<<<<<< HEAD
+=======
+// Atualiza a cor sempre que o status mudar
+productSchema.pre("save", async function() {
+  if (this.isModified("status")) {
+    this.statusCor = STATUS_COR_MAP[this.status] ?? "gray";
+  }
+});
+
+>>>>>>> developer
 export default mongoose.model("Product", productSchema);
