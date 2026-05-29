@@ -45,8 +45,6 @@ const productSchema = new mongoose.Schema({
     obser: { type: String },
 }, { timestamps: true });
 
-<<<<<<< HEAD
-=======
 // Atualiza a cor sempre que o status mudar
 productSchema.pre("save", async function() {
   if (this.isModified("status")) {
@@ -54,5 +52,4 @@ productSchema.pre("save", async function() {
   }
 });
 
->>>>>>> developer
 export default mongoose.model("Product", productSchema);
