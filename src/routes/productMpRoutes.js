@@ -6,10 +6,12 @@ import { createProductMp, deleteProductMp, getAllProductsMp, getProdutoMpPorId, 
 
 const router = express.Router();
 
-router.get("/todos",autenticar,autorizar("admin"), getAllProductsMp);
+router.get("/todos", getAllProductsMp);
+router.get("/produtoMpPorId/:id", getProdutoMpPorId);
+
 router.post("/criar", autenticar, autorizar("admin"), upload.single("imagemPrincipal"), createProductMp)
 router.put("/atualizar/:id", autenticar, autorizar("admin"), upload.single("imagemPrincipal"), updateProductMp);
 router.delete("/deletar/:id", autenticar, autorizar("admin"), deleteProductMp);
-router.get("/produtoMpPorId/:id", autenticar, autorizar("admin"), getProdutoMpPorId);
+
 
 export default router;

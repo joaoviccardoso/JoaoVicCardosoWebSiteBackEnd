@@ -5,7 +5,7 @@ import productMpModel from "../models/productMpModel.js";
 //cria o produto no banco
 export async function createProductMp(req, res, next) {
     try {
-        const { nomeCompleto, descricaoCurta, motivoDoProjeto } = req.body;
+        const { nomeCompleto, descricaoCurta, motivoDoProjeto, linkProjetoOnline, linkProjetoGitHub  } = req.body;
 
         const tecnologias = req.body.tecnologias
             ? JSON.parse(req.body.tecnologias)  
@@ -26,6 +26,8 @@ export async function createProductMp(req, res, next) {
             tecnologias,
             funcionalidades,
             imagemPrincipal,
+            linkProjetoOnline,
+            linkProjetoGitHub,
         });
 
         res.status(201).json({ message: "Produto cadastrado!", product });
@@ -47,7 +49,7 @@ export async function updateProductMp(req, res, next) {
             return res.status(404).json({ message: "Produto não encontrado" });
         }
 
-        const { nomeCompleto, descricaoCurta, motivoDoProjeto } = req.body;
+        const { nomeCompleto, descricaoCurta, motivoDoProjeto, linkProjetoOnline, linkProjetoGitHub } = req.body;
 
         console.log("BODY:", req.body);
         console.log("FILE:", req.file);
@@ -66,6 +68,8 @@ export async function updateProductMp(req, res, next) {
             motivoDoProjeto,
             tecnologias,
             funcionalidades,
+            linkProjetoOnline,
+            linkProjetoGitHub,
         };
 
         if (req.file) {

@@ -40,6 +40,8 @@ const produtoMpSchema = mongoose.Schema(
             type: String, // URL ou path do arquivo após upload
             default: null,
         },
+        linkProjetoOnline: { type: String },
+        linkProjetoGitHub: { type: String },
     },
     {
         timestamps: true, // cria createdAt e updatedAt automaticamente

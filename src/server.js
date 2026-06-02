@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
+import path from "path";
+import { fileURLToPath } from "url";
 import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import productMpRoutes from "./routes/productMpRoutes.js";
@@ -43,7 +45,15 @@ app.set("trust proxy", 1);
 app.use("/auth", authRoutes);
 app.use("/produtos", productRoutes);
 app.use("/produtosMP", productMpRoutes);
-app.use("/uploads", express.static("uploads"));
+
+// Cria o __dirname manualmente (ESModules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Usa path.resolve para garantir caminho absoluto correto independente do cwd
+const uploadsPath = path.resolve(__dirname, "../uploads");
+console.log("Servindo uploads de:", uploadsPath);
+app.use("/uploads", express.static(uploadsPath));
 
 app.use(manipulador404);
 app.use(manipuladorDeErros);
