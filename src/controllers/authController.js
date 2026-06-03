@@ -84,27 +84,57 @@ export async function login(req, res, next) {
   try {
     const { email, senha } = req.body;
 
+    // 1. Verifica se usuário existe
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Usuário não encontrado" });
     }
 
+    // 2. Verifica senha
     const senhaValida = await bcrypt.compare(senha, user.senha);
     if (!senhaValida) {
       return res.status(400).json({ message: "Senha ou Email errado." });
     }
 
-    
+    // 3. Verifica se email foi validado
+    if(!user.verified){
+      let token = await Token.findOne({ userId: user._id });
+      
+      // 4. Se não existir token, cria um novo
+      if (!token) {
+        const tokenString = crypto.randomBytes(32).toString("hex");
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+        token = await Token.create({
+          userId: user._id,
+          token: tokenString,
+        });
 
-    //removendo a senha
-    const { senha: _senha, ...dadosPublicos } = user.toObject();
-    res.json({ user: dadosPublicos, token });
+        // 5. Cria link correto (com ID + token)
+        const link = `${process.env.BASE_URL}/${user._id}/verify/${token.token}`;
+
+        // 6. Envia email novamente
+        await sendEmail(
+          user.email,
+          "Verificação de Email",
+          `Clique no link para verificar sua conta: ${link}`
+        );
+      }
+
+      return res.status(400).json({
+        message: "Verifique seu email. Um novo link foi enviado.",
+      });
+
+      // 7. Se estiver verificado, gera JWT
+      const token = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
+      );
+    }
+
+      //removendo a senha
+      const { senha: _senha, ...dadosPublicos } = user.toObject();
+      res.json({ user: dadosPublicos, token });
   } catch (err) {
     next(error)
   }
