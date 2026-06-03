@@ -55,6 +55,30 @@ export async function register(req, res, next) {
   }
 }
 
+export async function verificarToken(req, res, next){
+  try {
+    const user = await User.findOne({_id: req.params.id})
+    if (!user) {
+      return res.status(400).json({ message: "Invalid Link" });
+    }
+
+    const token = await Token.findOne({
+      userId: user._id,
+      token: req.params.token
+    })
+    if (!token) {
+      return res.status(400).json({ message: "Invalid Link" });
+    }
+
+    await User.updateOne({_id: user._id, verified: true})
+    await token.remove()
+
+    res.status(200).send({message: "Email verificado com sucesso"})
+  } catch (error) {
+    next(error)
+  }
+}
+
 //faz login 
 export async function login(req, res, next) {
   try {
@@ -67,8 +91,10 @@ export async function login(req, res, next) {
 
     const senhaValida = await bcrypt.compare(senha, user.senha);
     if (!senhaValida) {
-      return res.status(400).json({ message: "Senha inválida" });
+      return res.status(400).json({ message: "Senha ou Email errado." });
     }
+
+    
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
