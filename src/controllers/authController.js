@@ -1,30 +1,58 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { sendEmail } from "../utils/sendEmail.js";
 
 //cria o registro do usuario no banco
 export async function register(req, res, next) {
-    try{
-        const { nomeCompleto, email, senha, telefone } = req.body;
+  try {
+    const { nomeCompleto, email, senha, telefone } = req.body;
 
-        const userExist = await User.findOne({ email });
-        if (userExist) {
-            return res.status(400).json({ message: "Email já cadastrado" });
-        }
-
-        const senhaHash = await bcrypt.hash(senha, 10);
-
-        const newUser = await User.create({
-            nomeCompleto,
-            email,
-            senha: senhaHash,
-            telefone
-        });
-
-        res.status(201).json(newUser);
-    } catch (error){
-        next(error)
+    // 1. Verifica se já existe
+    const userExist = await User.findOne({ email });
+    if (userExist) {
+      return res.status(400).json({ message: "Email já cadastrado" });
     }
+
+    // 2. Criptografa senha
+    const senhaHash = await bcrypt.hash(senha, 10);
+
+    // 3. Cria usuário (não verificado)
+    const newUser = await User.create({
+      nomeCompleto,
+      email,
+      senha: senhaHash,
+      telefone,
+      verified: false,
+    });
+
+    // 4. Gera token
+    const token = crypto.randomBytes(32).toString("hex");
+
+    // 5. Salva token no banco
+    await Token.create({
+      userId: newUser._id,
+      token,
+    });
+
+    // 6. Cria link de verificação
+    const link = `${process.env.BASE_URL}/verify/${token}`;
+
+    // 7. Envia email
+    await sendEmail(
+      newUser.email,
+      "Verificação de Email",
+      `Clique no link para verificar sua conta: ${link}`
+    );
+
+    // 8. Resposta
+    res.status(201).json({
+      message: "Usuário criado! Verifique seu email.",
+    });
+
+  } catch (error) {
+    next(error);
+  }
 }
 
 //faz login 

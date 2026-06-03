@@ -57,9 +57,6 @@ app.use("/uploads", express.static(uploadsPath));
 app.use(manipulador404);
 app.use(manipuladorDeErros);
 
-
-import { sendEmail } from "./utils/sendEmail.js";
-
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
