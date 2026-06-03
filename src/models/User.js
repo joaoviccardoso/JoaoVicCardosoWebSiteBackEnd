@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { type } from "os";
 
 const userSchema = new mongoose.Schema({
     nomeCompleto: String,
@@ -9,7 +10,8 @@ const userSchema = new mongoose.Schema({
     cpf: Number,
     endereco: String,
     cep: String,
-    numeroCasa: String
+    numeroCasa: String,
+    verified: {type: Boolean, default: false}
 },{ timestamps: true })
 
 export default mongoose.model("User", userSchema);

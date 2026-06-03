@@ -52,11 +52,13 @@ const __dirname = path.dirname(__filename);
 
 // Usa path.resolve para garantir caminho absoluto correto independente do cwd
 const uploadsPath = path.resolve(__dirname, "../uploads");
-console.log("Servindo uploads de:", uploadsPath);
 app.use("/uploads", express.static(uploadsPath));
 
 app.use(manipulador404);
 app.use(manipuladorDeErros);
+
+
+import { sendEmail } from "./utils/sendEmail.js";
 
 connectDB().then(() => {
   app.listen(PORT, () => {
