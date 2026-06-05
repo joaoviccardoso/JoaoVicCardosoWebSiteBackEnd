@@ -5,7 +5,7 @@ import Product from "../models/productModel.js";
 export async function createProduct(req, res, next) {
     try {
         const { nomeProjeto, status, statusCor, cliente, dateEntrega, linkContrato, linkDemo, obser } = req.body;
-
+        console.log(statusCor, status)
         const product = await Product.create({
             nomeProjeto,
             status,
