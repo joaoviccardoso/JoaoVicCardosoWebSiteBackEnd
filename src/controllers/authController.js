@@ -1,9 +1,11 @@
-import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import User from "../models/User.js";
+import Token from "../models/token.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
-//cria o registro do usuario no banco
+// Cria o registro do usuário no banco
 export async function register(req, res, next) {
   try {
     const { nomeCompleto, email, senha, telefone } = req.body;
@@ -27,16 +29,16 @@ export async function register(req, res, next) {
     });
 
     // 4. Gera token
-    const token = crypto.randomBytes(32).toString("hex");
+    const tokenString = crypto.randomBytes(32).toString("hex");
 
     // 5. Salva token no banco
     await Token.create({
       userId: newUser._id,
-      token,
+      token: tokenString,
     });
 
-    // 6. Cria link de verificação
-    const link = `${process.env.BASE_URL}/verify/${token}`;
+    // 6. Cria link de verificação — com o ID do usuário (bug corrigido)
+    const link = `${process.env.BASE_URL}/${newUser._id}/verify/${tokenString}`;
 
     // 7. Envia email
     await sendEmail(
@@ -55,31 +57,35 @@ export async function register(req, res, next) {
   }
 }
 
-export async function verificarToken(req, res, next){
+// Verifica o token de email
+export async function verificarToken(req, res, next) {
   try {
-    const user = await User.findOne({_id: req.params.id})
+    const user = await User.findOne({ _id: req.params.id });
     if (!user) {
-      return res.status(400).json({ message: "Invalid Link" });
+      return res.status(400).json({ message: "Link inválido" });
     }
 
     const token = await Token.findOne({
       userId: user._id,
-      token: req.params.token
-    })
+      token: req.params.token,
+    });
     if (!token) {
-      return res.status(400).json({ message: "Invalid Link" });
+      return res.status(400).json({ message: "Link inválido" });
     }
 
-    await User.updateOne({_id: user._id, verified: true})
-    await token.remove()
+    // Bug corrigido: $set para realmente atualizar o campo
+    await User.updateOne({ _id: user._id }, { $set: { verified: true } });
 
-    res.status(200).send({message: "Email verificado com sucesso"})
+    // Bug corrigido: deleteOne no lugar de .remove() (depreciado no Mongoose 7+)
+    await Token.deleteOne({ _id: token._id });
+
+    res.status(200).json({ message: "Email verificado com sucesso" });
   } catch (error) {
-    next(error)
+    next(error);
   }
 }
 
-//faz login 
+// Faz login
 export async function login(req, res, next) {
   try {
     const { email, senha } = req.body;
@@ -97,10 +103,10 @@ export async function login(req, res, next) {
     }
 
     // 3. Verifica se email foi validado
-    if(!user.verified){
+    if (!user.verified) {
       let token = await Token.findOne({ userId: user._id });
-      
-      // 4. Se não existir token, cria um novo
+
+      // 4. Se não existir token, cria um novo e reenvia o email
       if (!token) {
         const tokenString = crypto.randomBytes(32).toString("hex");
 
@@ -109,10 +115,10 @@ export async function login(req, res, next) {
           token: tokenString,
         });
 
-        // 5. Cria link correto (com ID + token)
+        // 5. Cria link com ID + token
         const link = `${process.env.BASE_URL}/${user._id}/verify/${token.token}`;
 
-        // 6. Envia email novamente
+        // 6. Reenvia email
         await sendEmail(
           user.email,
           "Verificação de Email",
@@ -120,23 +126,27 @@ export async function login(req, res, next) {
         );
       }
 
+      // 7. Interrompe o login até o email ser verificado
       return res.status(400).json({
         message: "Verifique seu email. Um novo link foi enviado.",
       });
-
-      // 7. Se estiver verificado, gera JWT
-      const token = jwt.sign(
-        { id: user._id, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
-      );
     }
 
-      //removendo a senha
-      const { senha: _senha, ...dadosPublicos } = user.toObject();
-      res.json({ user: dadosPublicos, token });
+    // 8. Email verificado — gera JWT (bug corrigido: declarado fora do bloco if)
+    const jwtToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    // 9. Remove senha do objeto retornado
+    const { senha: _senha, ...dadosPublicos } = user.toObject();
+
+    res.json({ user: dadosPublicos, token: jwtToken });
+
   } catch (err) {
-    next(error)
+    // Bug corrigido: era next(error), variável inexistente
+    next(err);
   }
 }
 
