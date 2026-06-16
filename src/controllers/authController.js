@@ -188,6 +188,42 @@ export async function redefinirSenha(req, res, next){
   }
 }
 
+export async function resetSenha(req, res, next){
+  const { token } = req.params;
+  const { novaSenha } = req.body;
+
+  try {
+    // 1. Buscar token no banco
+    const tokenDoc = await Token.findOne({ token });
+
+    if (!tokenDoc) {
+      return res.status(400).json({ message: "Link inválido ou expirado" });
+    }
+
+    // 2. Buscar usuário pelo userId do token
+    const user = await User.findById(tokenDoc.userId);
+
+    if (!user) {
+      return res.status(400).json({ message: "Usuário não encontrado" });
+    }
+
+    // 3. Criptografar nova senha
+    const hashPassword = await bcrypt.hash(novaSenha, 10);
+
+    // 4. Atualizar senha no Mongo
+    await User.findByIdAndUpdate(user._id, {
+      senha: hashPassword,
+    });
+
+    // 5. (Opcional) Deletar token após uso
+    await Token.deleteOne({ _id: tokenDoc._id });
+
+    return res.json({message: "Senha redefinida com sucesso!"})
+  } catch (error) {
+    next(error)
+  }
+}
+
 /*-------------------------------CRUD CLIENTE--------------------------------------*/ 
 
 //Pega todos os login
