@@ -1,7 +1,7 @@
 import express from "express";
 import autenticar from "../middleware/authMiddleware.js";
 import rateLimit from "express-rate-limit"; //
-import {register, login, getAllUsers, putDadosUser, searchUser, getOneUser, deleteCliente, verificarToken} from "../controllers/authController.js";
+import {register, login, getAllUsers, putDadosUser, searchUser, getOneUser, deleteCliente, verificarToken, redefinirSenha, resetSenha} from "../controllers/authController.js";
 import autorizar from "../middleware/autorizarMiddleware.js";
 
 const router = express.Router();
@@ -31,6 +31,8 @@ const registerLimiter = rateLimit({
 router.post("/register", registerLimiter ,register);
 router.post("/login", loginLimiter ,login);
 router.get("/:id/verify/:token", verificarToken)
+router.post("/requestPassword", redefinirSenha)
+router.post("/resetPassword/:token",resetSenha)
 
 router.put("/atualizarDados/:id",autenticar, putDadosUser)
 router.get("/users", autenticar, autorizar("admin"), getAllUsers);

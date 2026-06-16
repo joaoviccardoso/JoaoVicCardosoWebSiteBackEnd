@@ -6,6 +6,10 @@ import Token from "../models/token.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
 /*---------------------AUTH USUARIOS----------------------------*/
+const EXPIRACAO_MS = {
+  verifyEmail: 60 * 60 * 1000,   // 1h
+  resetPassword: 15 * 60 * 1000, // 15min
+};
 
 // CRIA REGISTRO NO BANCO
 export async function register(req, res, next) {
@@ -32,11 +36,13 @@ export async function register(req, res, next) {
 
     // 4. Gera token
     const tokenString = crypto.randomBytes(32).toString("hex");
-
+    
     // 5. Salva token no banco
     await Token.create({
       userId: newUser._id,
       token: tokenString,
+      type: "verifyEmail",
+      expiresAt: new Date(Date.now() + EXPIRACAO_MS.verifyEmail),
     });
 
     // 6. Cria link de verificação — com o ID do usuário (bug corrigido)
@@ -78,27 +84,28 @@ export async function login(req, res, next) {
 
     // 3. Verifica se email foi validado
     if (!user.verified) {
-      let token = await Token.findOne({ userId: user._id });
+      let token = await Token.findOne({ userId: user._id, type: "verifyEmail" });
 
-      // 4. Se não existir token, cria um novo e reenvia o email
+      // 4. Se não existir token, cria um novo
       if (!token) {
         const tokenString = crypto.randomBytes(32).toString("hex");
-
         token = await Token.create({
           userId: user._id,
           token: tokenString,
+          type: "verifyEmail",
+          expiresAt: new Date(Date.now() + EXPIRACAO_MS.verifyEmail),
         });
-
-        // 5. Cria link com ID + token
-        const link = `${process.env.BASE_URL}/${user._id}/verify/${token.token}`;
-
-        // 6. Reenvia email
-        await sendEmail(
-          user.email,
-          "Verificação de Email",
-          `Clique no link para verificar sua conta: ${link}`
-        );
       }
+
+      // 5. Cria link com ID + token
+      const link = `${process.env.BASE_URL}/${user._id}/verify/${token.token}`;
+
+      // 6. Reenvia o e-mail sempre — reaproveitando o token existente ou o recém-criado
+      await sendEmail(
+        user.email,
+        "Verificação de Email",
+        `Clique no link para verificar sua conta: ${link}`
+      );
 
       // 7. Interrompe o login até o email ser verificado
       return res.status(400).json({
@@ -106,7 +113,7 @@ export async function login(req, res, next) {
       });
     }
 
-    // 8. Email verificado — gera JWT (bug corrigido: declarado fora do bloco if)
+    // 8. Email verificado — gera JWT
     const jwtToken = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -119,7 +126,6 @@ export async function login(req, res, next) {
     res.json({ user: dadosPublicos, token: jwtToken });
 
   } catch (err) {
-    // Bug corrigido: era next(error), variável inexistente
     next(err);
   }
 }
@@ -135,7 +141,9 @@ export async function verificarToken(req, res, next) {
     const token = await Token.findOne({
       userId: user._id,
       token: req.params.token,
+      type: "verifyEmail",
     });
+
     if (!token) {
       return res.status(400).json({ message: "Link inválido" });
     }
@@ -160,26 +168,28 @@ export async function redefinirSenha(req, res, next){
     // 1. Verifica se usuário existe
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Usuário não encontrado" });
+      return res.status(400).json({ message: "Se o e-mail existir, um link foi enviado." });
     }
 
     const tokenSenha = crypto.randomBytes(32).toString("hex")
     
-    token = await Token.create({
+    await Token.findOneAndDelete({ userId: user._id, type: "resetPassword" });
+
+    const token = await Token.create({
       userId: user._id,
-      token: tokenString,
+      token: tokenSenha,
+      type: "resetPassword",
+      expiresAt: new Date(Date.now() + EXPIRACAO_MS.resetPassword),
     });
 
     // . Cria link com ID + token
-    const link = `${process.env.BASE_URL}/${user._id}/verify/${token.token}`;
+    const link = `${process.env.BASE_URL}/resetPassword/${token.token}`;
 
     // . Reenvia email
     await sendEmail(
     user.email,
       "Redefinição de senha",
-      `Clique no link para mudar sua senha: ${link}
-       Esse link vai expirar em 15 minutos.
-      `
+      `Clique no link para mudar sua senha: ${link}\nEsse link vai expirar em 15 minutos.`
     );
 
     return res.json({message: "E-mail de redefinição enviado!"})
@@ -194,7 +204,7 @@ export async function resetSenha(req, res, next){
 
   try {
     // 1. Buscar token no banco
-    const tokenDoc = await Token.findOne({ token });
+    const tokenDoc = await Token.findOne({ token, type: "resetPassword" });
 
     if (!tokenDoc) {
       return res.status(400).json({ message: "Link inválido ou expirado" });
