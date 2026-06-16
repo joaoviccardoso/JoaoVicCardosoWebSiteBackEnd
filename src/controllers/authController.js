@@ -5,7 +5,9 @@ import User from "../models/User.js";
 import Token from "../models/token.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
-// Cria o registro do usuário no banco
+/*---------------------AUTH USUARIOS----------------------------*/
+
+// CRIA REGISTRO NO BANCO
 export async function register(req, res, next) {
   try {
     const { nomeCompleto, email, senha, telefone } = req.body;
@@ -57,35 +59,7 @@ export async function register(req, res, next) {
   }
 }
 
-// Verifica o token de email
-export async function verificarToken(req, res, next) {
-  try {
-    const user = await User.findOne({ _id: req.params.id });
-    if (!user) {
-      return res.status(400).json({ message: "Link inválido" });
-    }
-
-    const token = await Token.findOne({
-      userId: user._id,
-      token: req.params.token,
-    });
-    if (!token) {
-      return res.status(400).json({ message: "Link inválido" });
-    }
-
-    // Bug corrigido: $set para realmente atualizar o campo
-    await User.updateOne({ _id: user._id }, { $set: { verified: true } });
-
-    // Bug corrigido: deleteOne no lugar de .remove() (depreciado no Mongoose 7+)
-    await Token.deleteOne({ _id: token._id });
-
-    res.status(200).json({ message: "Email verificado com sucesso" });
-  } catch (error) {
-    next(error);
-  }
-}
-
-// Faz login
+// FAZ LOGIN
 export async function login(req, res, next) {
   try {
     const { email, senha } = req.body;
@@ -149,6 +123,72 @@ export async function login(req, res, next) {
     next(err);
   }
 }
+
+// Verifica o token de email
+export async function verificarToken(req, res, next) {
+  try {
+    const user = await User.findOne({ _id: req.params.id });
+    if (!user) {
+      return res.status(400).json({ message: "Link inválido" });
+    }
+
+    const token = await Token.findOne({
+      userId: user._id,
+      token: req.params.token,
+    });
+    if (!token) {
+      return res.status(400).json({ message: "Link inválido" });
+    }
+
+    // Bug corrigido: $set para realmente atualizar o campo
+    await User.updateOne({ _id: user._id }, { $set: { verified: true } });
+
+    // Bug corrigido: deleteOne no lugar de .remove() (depreciado no Mongoose 7+)
+    await Token.deleteOne({ _id: token._id });
+
+    res.status(200).json({ message: "Email verificado com sucesso" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+//CRIA O TOKEN E ENVIA POR EMAIL
+export async function redefinirSenha(req, res, next){
+  const { email } = req.body;
+
+  try {
+    // 1. Verifica se usuário existe
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Usuário não encontrado" });
+    }
+
+    const tokenSenha = crypto.randomBytes(32).toString("hex")
+    
+    token = await Token.create({
+      userId: user._id,
+      token: tokenString,
+    });
+
+    // . Cria link com ID + token
+    const link = `${process.env.BASE_URL}/${user._id}/verify/${token.token}`;
+
+    // . Reenvia email
+    await sendEmail(
+    user.email,
+      "Redefinição de senha",
+      `Clique no link para mudar sua senha: ${link}
+       Esse link vai expirar em 15 minutos.
+      `
+    );
+
+    return res.json({message: "E-mail de redefinição enviado!"})
+  } catch (error) {
+    next(error);
+  }
+}
+
+/*-------------------------------CRUD CLIENTE--------------------------------------*/ 
 
 //Pega todos os login
 export async function getAllUsers(req, res, next) {
