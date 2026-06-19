@@ -35,12 +35,14 @@ export async function register(req, res, next) {
     });
 
     // 4. Gera token
+    // Token cru (vai no link) + hash (vai no banco)
     const tokenString = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(tokenString).digest("hex");
     
     // 5. Salva token no banco
     await Token.create({
       userId: newUser._id,
-      token: tokenString,
+      token: tokenHash,
       type: "verifyEmail",
       expiresAt: new Date(Date.now() + EXPIRACAO_MS.verifyEmail),
     });
@@ -133,19 +135,23 @@ export async function login(req, res, next) {
 // Verifica o token de email
 export async function verificarToken(req, res, next) {
   try {
+
     const user = await User.findOne({ _id: req.params.id });
     if (!user) {
       return res.status(400).json({ message: "Link inválido" });
     }
 
+    const tokenHash = crypto.createHash("sha256").update(req.params.token).digest("hex");
+
     const token = await Token.findOne({
       userId: user._id,
-      token: req.params.token,
+      token: tokenHash,
       type: "verifyEmail",
     });
 
-    if (!token) {
-      return res.status(400).json({ message: "Link inválido" });
+    if (!token || token.expiresAt < new Date()) {
+      if (token) await Token.deleteOne({ _id: token._id });
+      return res.status(400).json({ message: "Link inválido ou expirado" });
     }
 
     // Bug corrigido: $set para realmente atualizar o campo
@@ -160,53 +166,54 @@ export async function verificarToken(req, res, next) {
   }
 }
 
-//CRIA O TOKEN E ENVIA POR EMAIL
+//CRIA O TOKEN E ENVIA POR EMAIL PARA A PESSOA CONSEGUIR REDEFINIR A SENHA
 export async function redefinirSenha(req, res, next){
   const { email } = req.body;
 
   try {
     // 1. Verifica se usuário existe
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Se o e-mail existir, um link foi enviado." });
+
+    if (user) {
+      const tokenSenha = crypto.randomBytes(32).toString("hex"); // vai no link/e-mail
+      const tokenHash = crypto.createHash("sha256").update(tokenSenha).digest("hex"); // vai no banco
+
+      await Token.findOneAndDelete({ userId: user._id, type: "resetPassword" });
+
+      //Cria o token (hash) e linka ele a um ID
+      await Token.create({
+        userId: user._id,
+        token: tokenHash,
+        type: "resetPassword",
+        expiresAt: new Date(Date.now() + EXPIRACAO_MS.resetPassword),
+      });
+
+      //Cria o link para o reset usando o token CRU (não o hash)
+      const link = `${process.env.BASE_URL}/resetPassword/${tokenSenha}`;
+
+      //Envia o email
+      await sendEmail(user.email, "Redefinição de senha",
+        `Clique no link para mudar sua senha: ${link}\nEsse link vai expirar em 15 minutos.`);
     }
 
-    const tokenSenha = crypto.randomBytes(32).toString("hex")
-    
-    await Token.findOneAndDelete({ userId: user._id, type: "resetPassword" });
-
-    const token = await Token.create({
-      userId: user._id,
-      token: tokenSenha,
-      type: "resetPassword",
-      expiresAt: new Date(Date.now() + EXPIRACAO_MS.resetPassword),
-    });
-
-    // . Cria link com ID + token
-    const link = `${process.env.BASE_URL}/resetPassword/${token.token}`;
-
-    // . Reenvia email
-    await sendEmail(
-    user.email,
-      "Redefinição de senha",
-      `Clique no link para mudar sua senha: ${link}\nEsse link vai expirar em 15 minutos.`
-    );
-
-    return res.json({message: "E-mail de redefinição enviado!"})
+    return res.json({message: "Se o e-mail existir, enviamos um link de redefinição."})
   } catch (error) {
     next(error);
   }
 }
 
+//CRIA A NOVA SENHA
 export async function resetSenha(req, res, next){
   const { token } = req.params;
   const { novaSenha } = req.body;
 
   try {
     // 1. Buscar token no banco
-    const tokenDoc = await Token.findOne({ token, type: "resetPassword" });
-
-    if (!tokenDoc) {
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const tokenDoc = await Token.findOne({ token: tokenHash, type: "resetPassword" });
+    
+    if (!tokenDoc || tokenDoc.expiresAt < new Date()) {
+      if (tokenDoc) await Token.deleteOne({ _id: tokenDoc._id }); // limpa na hora
       return res.status(400).json({ message: "Link inválido ou expirado" });
     }
 
