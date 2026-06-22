@@ -27,6 +27,7 @@ const loginLimiterByIP = rateLimit({
     const email = (req.body?.email || '').toLowerCase().trim();
     return ip + '-' + email;
   },
+  validate: { xForwardedForHeader: false }, // suprime o aviso, estamos tratando manualmente
   message: { message: "Muitas tentativas de login. Tente novamente em 15 minutos." },
   standardHeaders: true,
   legacyHeaders: false,
