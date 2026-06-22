@@ -40,7 +40,7 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-app.set("trust proxy", 1);
+app.set("trust proxy", 2);
 
 app.use((req, res, next) => {
   console.log("IP:", req.ip, "| X-Forwarded-For:", req.headers["x-forwarded-for"]);

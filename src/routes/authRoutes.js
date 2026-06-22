@@ -7,16 +7,25 @@ import autorizar from "../middleware/autorizarMiddleware.js";
 const router = express.Router();
 
 // ---------- Rate Limiters ----------
- 
+
+// Função auxiliar — extrai o IP real do cliente
+const getClientIp = (req) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim(); // primeiro IP = cliente real
+  }
+  return req.ip;
+};
 
 // Login por IP + email: bloqueia aquele IP tentando aquele email específico
 const loginLimiterByIP = rateLimit({
-  windowMs: 1 * 60 * 1000,
+  windowMs: 15 * 60 * 1000,
   max: 5,
   skipSuccessfulRequests: true,
   keyGenerator: (req) => {
+    const ip = getClientIp(req);
     const email = (req.body?.email || '').toLowerCase().trim();
-    return req.ip + '-' + email;
+    return ip + '-' + email;
   },
   message: { message: "Muitas tentativas de login. Tente novamente em 15 minutos." },
   standardHeaders: true,
