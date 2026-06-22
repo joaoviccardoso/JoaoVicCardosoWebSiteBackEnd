@@ -8,10 +8,29 @@ const router = express.Router();
 
 // ---------- Rate Limiters ----------
  
-// Login: 5 tentativas a cada 15 minutos por IP
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+
+// Login por IP + email: bloqueia aquele IP tentando aquele email específico
+const loginLimiterByIP = rateLimit({
+  windowMs: 1 * 60 * 1000,
   max: 5,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => {
+    const email = (req.body?.email || '').toLowerCase().trim();
+    return req.ip + '-' + email;
+  },
+  message: { message: "Muitas tentativas de login. Tente novamente em 15 minutos." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Login por email: bloqueia brute force distribuído (vários IPs, mesmo email)
+const loginLimiterByEmail = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => {
+    return (req.body?.email || '').toLowerCase().trim();
+  },
   message: { message: "Muitas tentativas de login. Tente novamente em 15 minutos." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -54,7 +73,7 @@ const verifyLimiter = rateLimit({
 });
  
 router.post("/register", registerLimiter ,register);
-router.post("/login", loginLimiter ,login);
+router.post("/login", loginLimiterByIP, loginLimiterByEmail ,login);
 router.get("/:id/verify/:token", verificarToken)
 router.post("/requestPassword", requestPasswordLimiter, redefinirSenha)
 router.post("/resetPassword/:token", resetPasswordLimiter,resetSenha)
