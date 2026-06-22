@@ -42,11 +42,6 @@ app.use(express.json());
 
 app.set("trust proxy", 2);
 
-app.use((req, res, next) => {
-  console.log("IP:", req.ip, "| X-Forwarded-For:", req.headers["x-forwarded-for"]);
-  next();
-});
-
 app.use("/auth", authRoutes);
 app.use("/produtos", productRoutes);
 app.use("/produtosMP", productMpRoutes);
